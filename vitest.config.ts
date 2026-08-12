@@ -1,0 +1,22 @@
+import path from "node:path";
+
+import react from "@vitejs/plugin-react";
+import { configDefaults, defineConfig } from "vitest/config";
+
+export default defineConfig({
+  plugins: [react()],
+  resolve: {
+    alias: {
+      "@": path.resolve(__dirname, "./src"),
+      "server-only": path.resolve(__dirname, "./tests/server-only.ts"),
+    },
+  },
+  test: {
+    environment: "jsdom",
+    setupFiles: ["./vitest.setup.ts"],
+    exclude: [...configDefaults.exclude, "tests/e2e/**"],
+    coverage: {
+      reporter: ["text", "html"],
+    },
+  },
+});
