@@ -403,9 +403,9 @@ function SessionButton({
       </span>
       <span className="font-semibold">{title}</span>
       <span className="mt-1 text-sm text-muted-foreground">{note}</span>
-      <Badge className="mt-auto" variant="secondary">
-        {places}
-      </Badge>
+      <span className="mt-auto pt-3">
+        <Badge variant="secondary">{places}</Badge>
+      </span>
     </button>
   );
 }
