@@ -3,13 +3,14 @@ import type { ReactNode } from "react";
 
 import { ThemeProvider } from "@/components/theme-provider";
 import { Toaster } from "@/components/ui/sonner";
+import { PRODUCT_NAME } from "@/config/product";
 
 import "./globals.css";
 
 export const metadata: Metadata = {
   title: {
-    default: "Лапа к лапе — запись к кинологу",
-    template: "%s · Лапа к лапе",
+    default: `${PRODUCT_NAME} — запись к кинологу`,
+    template: `%s · ${PRODUCT_NAME}`,
   },
   description: "Запись на индивидуальные и групповые занятия с кинологом.",
 };

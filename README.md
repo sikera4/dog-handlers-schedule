@@ -1,4 +1,4 @@
-# Лапа к лапе
+# Диалог с собакой
 
 Russian-first application for booking individual and group sessions with a dog
 handler. One Next.js application serves the regular web booking flow, Telegram

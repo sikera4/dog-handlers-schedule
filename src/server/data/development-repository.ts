@@ -181,6 +181,7 @@ export class DevelopmentRepository
             sessionType: slot.sessionType,
             startsAt: slot.startsAt,
             endsAt: slot.endsAt,
+            location: slot.location,
             telegramUsername: booking.telegramUsername,
             phone: booking.phone,
             clientName: booking.clientName,
