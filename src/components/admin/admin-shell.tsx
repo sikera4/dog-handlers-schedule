@@ -25,6 +25,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { PRODUCT_NAME } from "@/config/product";
+import { createGoogleCalendarUrl } from "@/lib/google-calendar";
 import type {
   AdminBooking,
   BookingStatus,
@@ -249,6 +250,15 @@ function BookingRow({
         ) : null}
         {booking.status === "confirmed" ? (
           <>
+            <Button asChild size="sm" variant="outline">
+              <a
+                href={createGoogleCalendarUrl(booking)}
+                target="_blank"
+                rel="noreferrer"
+              >
+                <CalendarPlusIcon data-icon="inline-start" />В Google Календарь
+              </a>
+            </Button>
             <Button
               size="sm"
               variant="secondary"

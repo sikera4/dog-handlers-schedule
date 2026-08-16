@@ -86,7 +86,7 @@ export class SupabaseAdminRepository implements AdminRepository {
     const { data, error } = await this.client
       .from("bookings")
       .select(
-        "id, slot_id, telegram_username, phone, client_name, dog_name, status, admin_notes, created_at, session_slots!inner(session_type, starts_at, ends_at)",
+        "id, slot_id, telegram_username, phone, client_name, dog_name, status, admin_notes, created_at, session_slots!inner(session_type, starts_at, ends_at, location)",
       )
       .order("created_at", { ascending: false });
     if (error) throw mapSupabaseError(error.message);
@@ -105,6 +105,7 @@ export class SupabaseAdminRepository implements AdminRepository {
         session_type: SessionType;
         starts_at: string;
         ends_at: string;
+        location: string | null;
       };
     };
 
@@ -114,6 +115,7 @@ export class SupabaseAdminRepository implements AdminRepository {
       sessionType: row.session_slots.session_type,
       startsAt: row.session_slots.starts_at,
       endsAt: row.session_slots.ends_at,
+      location: row.session_slots.location ?? undefined,
       telegramUsername: row.telegram_username ?? undefined,
       phone: row.phone ?? undefined,
       clientName: row.client_name ?? undefined,

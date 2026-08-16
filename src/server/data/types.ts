@@ -43,6 +43,7 @@ export type AdminBooking = {
   sessionType: SessionType;
   startsAt: string;
   endsAt: string;
+  location?: string;
   telegramUsername?: string;
   phone?: string;
   clientName?: string;
