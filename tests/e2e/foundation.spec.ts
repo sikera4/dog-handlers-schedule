@@ -9,7 +9,9 @@ test("opens the Russian booking entry point", async ({ page }) => {
   await expect(page.getByText("Время показываем по Москве")).toBeVisible();
 });
 
-test("opens the admin foundation", async ({ page }) => {
+test("opens the admin and deletes an unbooked slot", async ({
+  page,
+}, testInfo) => {
   await page.goto("/admin");
 
   await page.getByLabel("Пароль").fill("playwright-local-password");
@@ -17,6 +19,23 @@ test("opens the admin foundation", async ({ page }) => {
   await expect(
     page.getByRole("heading", { name: "Панель администратора" }),
   ).toBeVisible();
+
+  const deleteButtons = page.locator(
+    'button[aria-label^="Удалить слот"]:not(:disabled)',
+  );
+  const deleteButton = deleteButtons.nth(
+    testInfo.project.name === "chromium" ? 0 : 1,
+  );
+  const accessibleName = await deleteButton.getAttribute("aria-label");
+  expect(accessibleName).toBeTruthy();
+
+  page.once("dialog", (dialog) => dialog.accept());
+  await deleteButton.click();
+
+  await expect(page.getByText("Слот удалён")).toBeVisible();
+  await expect(page.getByRole("button", { name: accessibleName! })).toHaveCount(
+    0,
+  );
 });
 
 test("books the last individual place atomically", async ({

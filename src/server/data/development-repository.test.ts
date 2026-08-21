@@ -93,4 +93,39 @@ describe("development booking repository", () => {
       expect.objectContaining<Partial<RepositoryError>>({ code: "CONFLICT" }),
     );
   });
+
+  it("lists and deletes a slot without bookings", async () => {
+    const repository = await createRepository();
+    const [slot] = await repository.listSlots();
+
+    expect(slot).toMatchObject({ bookingCount: 0 });
+    await repository.deleteSlot(slot.id);
+
+    await expect(repository.listSlots()).resolves.not.toContainEqual(
+      expect.objectContaining({ id: slot.id }),
+    );
+  });
+
+  it("does not delete a slot with booking history", async () => {
+    const repository = await createRepository();
+    const [slot] = await repository.listAvailability({
+      from: new Date().toISOString(),
+      to: new Date(Date.now() + 45 * 24 * 60 * 60 * 1000).toISOString(),
+    });
+    const booking = await repository.createBooking({
+      slotId: slot.id,
+      phone: "+79991234567",
+      dogName: "Рекс",
+    });
+    await repository.updateBookingStatus(booking.id, "cancelled");
+
+    await expect(repository.deleteSlot(slot.id)).rejects.toEqual(
+      expect.objectContaining<Partial<RepositoryError>>({
+        code: "SLOT_HAS_BOOKINGS",
+      }),
+    );
+    await expect(repository.listSlots()).resolves.toContainEqual(
+      expect.objectContaining({ id: slot.id, bookingCount: 1 }),
+    );
+  });
 });

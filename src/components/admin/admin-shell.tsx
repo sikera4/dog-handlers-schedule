@@ -10,6 +10,7 @@ import {
   MessageCircleIcon,
   PawPrintIcon,
   PhoneIcon,
+  Trash2Icon,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -28,8 +29,10 @@ import { PRODUCT_NAME } from "@/config/product";
 import { createGoogleCalendarUrl } from "@/lib/google-calendar";
 import type {
   AdminBooking,
+  AdminSlot,
   BookingStatus,
   SessionType,
+  SlotStatus,
 } from "@/server/data/types";
 
 const STATUS_LABELS: Record<BookingStatus, string> = {
@@ -40,16 +43,25 @@ const STATUS_LABELS: Record<BookingStatus, string> = {
   no_show: "Не пришли",
 };
 
+const SLOT_STATUS_LABELS: Record<SlotStatus, string> = {
+  open: "Открыт",
+  closed: "Закрыт",
+  cancelled: "Отменён",
+};
+
 export function AdminShell({
   bookings,
+  slots,
   identity,
 }: {
   bookings: AdminBooking[];
+  slots: AdminSlot[];
   identity: string;
 }) {
   const router = useRouter();
   const [filter, setFilter] = useState<BookingStatus | "all">("all");
   const [pendingId, setPendingId] = useState<string>();
+  const [pendingSlotId, setPendingSlotId] = useState<string>();
   const visibleBookings = useMemo(
     () =>
       bookings.filter(
@@ -82,6 +94,32 @@ export function AdminShell({
   async function logout() {
     await fetch("/api/admin/session", { method: "DELETE" });
     window.location.reload();
+  }
+
+  async function deleteSlot(slot: AdminSlot) {
+    const confirmed = window.confirm(
+      `Удалить слот ${formatAdminSlotDate(slot.startsAt, slot.endsAt)}?\n\nЭто действие нельзя отменить.`,
+    );
+    if (!confirmed) return;
+
+    setPendingSlotId(slot.id);
+    try {
+      const response = await fetch(`/api/admin/slots/${slot.id}`, {
+        method: "DELETE",
+      });
+      if (!response.ok) {
+        const body = (await response.json()) as { message?: string };
+        throw new Error(body.message);
+      }
+      toast.success("Слот удалён");
+      router.refresh();
+    } catch (error) {
+      toast.error(
+        error instanceof Error ? error.message : "Не удалось удалить слот",
+      );
+    } finally {
+      setPendingSlotId(undefined);
+    }
   }
 
   return (
@@ -145,35 +183,121 @@ export function AdminShell({
         </div>
 
         <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_22rem]">
-          <Card>
-            <CardHeader>
-              <CardTitle>Ближайшие записи</CardTitle>
-              <CardDescription>
-                {visibleBookings.length} {countLabel(visibleBookings.length)}
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              {visibleBookings.length === 0 ? (
-                <div className="rounded-xl border border-dashed p-8 text-center text-sm text-muted-foreground">
-                  Записей с таким статусом пока нет.
-                </div>
-              ) : (
-                visibleBookings.map((booking) => (
-                  <BookingRow
-                    key={booking.id}
-                    booking={booking}
-                    pending={pendingId === booking.id}
-                    onStatusChange={updateStatus}
-                  />
-                ))
-              )}
-            </CardContent>
-          </Card>
+          <div className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle>Ближайшие записи</CardTitle>
+                <CardDescription>
+                  {visibleBookings.length} {countLabel(visibleBookings.length)}
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                {visibleBookings.length === 0 ? (
+                  <div className="rounded-xl border border-dashed p-8 text-center text-sm text-muted-foreground">
+                    Записей с таким статусом пока нет.
+                  </div>
+                ) : (
+                  visibleBookings.map((booking) => (
+                    <BookingRow
+                      key={booking.id}
+                      booking={booking}
+                      pending={pendingId === booking.id}
+                      onStatusChange={updateStatus}
+                    />
+                  ))
+                )}
+              </CardContent>
+            </Card>
+
+            <SlotListCard
+              slots={slots}
+              pendingSlotId={pendingSlotId}
+              onDelete={deleteSlot}
+            />
+          </div>
 
           <CreateSlotCard onCreated={() => router.refresh()} />
         </div>
       </section>
     </main>
+  );
+}
+
+function SlotListCard({
+  slots,
+  pendingSlotId,
+  onDelete,
+}: {
+  slots: AdminSlot[];
+  pendingSlotId?: string;
+  onDelete: (slot: AdminSlot) => Promise<void>;
+}) {
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>Созданные слоты</CardTitle>
+        <CardDescription>
+          Ближайшие слоты расписания. Слот с историей записей удалить нельзя.
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-3">
+        {slots.length === 0 ? (
+          <div className="rounded-xl border border-dashed p-8 text-center text-sm text-muted-foreground">
+            Будущих слотов пока нет.
+          </div>
+        ) : (
+          slots.map((slot) => {
+            const hasBookings = slot.bookingCount > 0;
+            const pending = pendingSlotId === slot.id;
+
+            return (
+              <article
+                key={slot.id}
+                className="flex flex-col justify-between gap-4 rounded-xl border bg-background p-4 sm:flex-row sm:items-center"
+              >
+                <div className="min-w-0">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <p className="font-semibold">
+                      {formatAdminSlotDate(slot.startsAt, slot.endsAt)}
+                    </p>
+                    <Badge variant="secondary">
+                      {SLOT_STATUS_LABELS[slot.status]}
+                    </Badge>
+                    {hasBookings ? (
+                      <Badge variant="outline">
+                        Записей: {slot.bookingCount}
+                      </Badge>
+                    ) : null}
+                  </div>
+                  <p className="mt-1 text-sm text-muted-foreground">
+                    {slot.sessionType === "individual"
+                      ? "Индивидуальное"
+                      : `Групповое · мест: ${slot.capacity}`}
+                    {slot.location ? ` · ${slot.location}` : ""}
+                  </p>
+                  {hasBookings ? (
+                    <p className="mt-2 text-xs text-muted-foreground">
+                      Для этого слота уже есть история записей, поэтому удалить
+                      его нельзя.
+                    </p>
+                  ) : null}
+                </div>
+                <Button
+                  size="sm"
+                  variant="destructive"
+                  disabled={pending || hasBookings}
+                  aria-label={`Удалить слот ${formatAdminSlotDate(slot.startsAt, slot.endsAt)}`}
+                  onClick={() => onDelete(slot)}
+                >
+                  <Trash2Icon data-icon="inline-start" />
+                  {pending ? "Удаляем…" : "Удалить"}
+                </Button>
+              </article>
+            );
+          })
+        )}
+      </CardContent>
+    </Card>
   );
 }
 
@@ -459,6 +583,16 @@ function formatAdminDate(isoDate: string) {
     hour: "2-digit",
     minute: "2-digit",
   }).format(new Date(isoDate));
+}
+
+function formatAdminSlotDate(startsAt: string, endsAt: string) {
+  const endTime = new Intl.DateTimeFormat("ru-RU", {
+    timeZone: "Europe/Moscow",
+    hour: "2-digit",
+    minute: "2-digit",
+  }).format(new Date(endsAt));
+
+  return `${formatAdminDate(startsAt)}–${endTime}`;
 }
 
 function moscowInputToIso(value: string) {
