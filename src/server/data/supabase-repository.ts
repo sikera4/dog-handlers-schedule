@@ -5,6 +5,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import type {
   AdminBooking,
   AdminRepository,
+  AdminSlot,
   AvailabilitySlot,
   BookingConfirmation,
   BookingRepository,
@@ -126,6 +127,42 @@ export class SupabaseAdminRepository implements AdminRepository {
     }));
   }
 
+  async listSlots(): Promise<AdminSlot[]> {
+    const { data, error } = await this.client
+      .from("session_slots")
+      .select(
+        "id, session_type, starts_at, ends_at, capacity, status, location, public_notes, bookings(count)",
+      )
+      .gte("ends_at", new Date().toISOString())
+      .order("starts_at", { ascending: true })
+      .limit(100);
+    if (error) throw mapSupabaseError(error.message);
+
+    type Row = {
+      id: string;
+      session_type: SessionType;
+      starts_at: string;
+      ends_at: string;
+      capacity: number;
+      status: AdminSlot["status"];
+      location: string | null;
+      public_notes: string | null;
+      bookings: { count: number }[];
+    };
+
+    return ((data ?? []) as unknown as Row[]).map((row) => ({
+      id: row.id,
+      sessionType: row.session_type,
+      startsAt: row.starts_at,
+      endsAt: row.ends_at,
+      capacity: row.capacity,
+      status: row.status,
+      location: row.location ?? undefined,
+      publicNotes: row.public_notes ?? undefined,
+      bookingCount: row.bookings[0]?.count ?? 0,
+    }));
+  }
+
   async updateBookingStatus(
     bookingId: string,
     status: BookingStatus,
@@ -170,6 +207,23 @@ export class SupabaseAdminRepository implements AdminRepository {
     const { error } = await this.client.from("session_slots").insert(rows);
     if (error) throw mapSupabaseError(error.message);
     return rows.length;
+  }
+
+  async deleteSlot(slotId: string): Promise<void> {
+    const { data, error } = await this.client
+      .from("session_slots")
+      .delete()
+      .eq("id", slotId)
+      .select("id")
+      .maybeSingle();
+
+    if (error) {
+      if (error.code === "23503") {
+        throw new RepositoryError("SLOT_HAS_BOOKINGS", error.message);
+      }
+      throw mapSupabaseError(error.message);
+    }
+    if (!data) throw new RepositoryError("SLOT_NOT_FOUND");
   }
 }
 

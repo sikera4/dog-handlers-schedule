@@ -7,6 +7,7 @@ import path from "node:path";
 import type {
   AdminBooking,
   AdminRepository,
+  AdminSlot,
   AvailabilitySlot,
   BookingConfirmation,
   BookingRepository,
@@ -195,6 +196,27 @@ export class DevelopmentRepository
       .sort((left, right) => left.startsAt.localeCompare(right.startsAt));
   }
 
+  async listSlots(): Promise<AdminSlot[]> {
+    const data = await this.readData();
+
+    return data.slots
+      .filter((slot) => Date.parse(slot.endsAt) >= Date.now())
+      .sort((left, right) => left.startsAt.localeCompare(right.startsAt))
+      .map((slot) => ({
+        id: slot.id,
+        sessionType: slot.sessionType,
+        startsAt: slot.startsAt,
+        endsAt: slot.endsAt,
+        capacity: slot.capacity,
+        status: slot.status,
+        location: slot.location,
+        publicNotes: slot.publicNotes,
+        bookingCount: data.bookings.filter(
+          (booking) => booking.slotId === slot.id,
+        ).length,
+      }));
+  }
+
   async updateBookingStatus(
     bookingId: string,
     status: BookingStatus,
@@ -263,6 +285,21 @@ export class DevelopmentRepository
       data.slots.push(...createdSlots);
       await this.writeData(data);
       return createdSlots.length;
+    });
+  }
+
+  async deleteSlot(slotId: string): Promise<void> {
+    await this.withMutation(async () => {
+      const data = await this.readData();
+      const slotIndex = data.slots.findIndex((slot) => slot.id === slotId);
+      if (slotIndex === -1) throw new RepositoryError("SLOT_NOT_FOUND");
+
+      if (data.bookings.some((booking) => booking.slotId === slotId)) {
+        throw new RepositoryError("SLOT_HAS_BOOKINGS");
+      }
+
+      data.slots.splice(slotIndex, 1);
+      await this.writeData(data);
     });
   }
 

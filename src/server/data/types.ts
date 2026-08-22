@@ -53,6 +53,18 @@ export type AdminBooking = {
   createdAt: string;
 };
 
+export type AdminSlot = {
+  id: string;
+  sessionType: SessionType;
+  startsAt: string;
+  endsAt: string;
+  capacity: number;
+  status: SlotStatus;
+  location?: string;
+  publicNotes?: string;
+  bookingCount: number;
+};
+
 export type CreateSlotsRequest = {
   sessionType: SessionType;
   startsAt: string;
@@ -74,8 +86,10 @@ export type BookingRepository = {
 
 export type AdminRepository = {
   listBookings(): Promise<AdminBooking[]>;
+  listSlots(): Promise<AdminSlot[]>;
   updateBookingStatus(bookingId: string, status: BookingStatus): Promise<void>;
   createSlots(input: CreateSlotsRequest): Promise<number>;
+  deleteSlot(slotId: string): Promise<void>;
 };
 
 export class RepositoryError extends Error {
@@ -85,6 +99,7 @@ export class RepositoryError extends Error {
       | "SLOT_NOT_OPEN"
       | "SLOT_IN_PAST"
       | "SLOT_FULL"
+      | "SLOT_HAS_BOOKINGS"
       | "CONFLICT"
       | "NOT_CONFIGURED"
       | "UNKNOWN",

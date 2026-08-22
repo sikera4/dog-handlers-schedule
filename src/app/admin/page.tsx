@@ -32,6 +32,12 @@ export default async function AdminPage({
     );
   }
 
-  const bookings = await getAdminRepository(session.client).listBookings();
-  return <AdminShell bookings={bookings} identity={session.identity} />;
+  const repository = getAdminRepository(session.client);
+  const [bookings, slots] = await Promise.all([
+    repository.listBookings(),
+    repository.listSlots(),
+  ]);
+  return (
+    <AdminShell bookings={bookings} slots={slots} identity={session.identity} />
+  );
 }
