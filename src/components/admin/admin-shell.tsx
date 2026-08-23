@@ -124,7 +124,7 @@ export function AdminShell({
 
   return (
     <main className="min-h-dvh bg-muted/35">
-      <header className="border-b bg-background">
+      <header className="motion-slide-down border-b bg-background">
         <div className="mx-auto flex min-h-16 max-w-7xl items-center justify-between gap-3 px-4 py-3 sm:px-6 lg:px-8">
           <Link href="/admin" className="flex items-center gap-2 font-semibold">
             <PawPrintIcon className="size-5 text-primary" aria-hidden="true" />
@@ -154,7 +154,7 @@ export function AdminShell({
       </header>
 
       <section className="mx-auto max-w-7xl space-y-8 px-4 py-8 sm:px-6 lg:px-8">
-        <div className="flex flex-col justify-between gap-4 md:flex-row md:items-end">
+        <div className="motion-enter flex flex-col justify-between gap-4 md:flex-row md:items-end">
           <div>
             <p className="text-sm font-medium text-primary">
               Рабочее расписание
@@ -184,14 +184,14 @@ export function AdminShell({
 
         <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_22rem]">
           <div className="space-y-6">
-            <Card>
+            <Card className="motion-enter motion-enter-delay-1">
               <CardHeader>
                 <CardTitle>Ближайшие записи</CardTitle>
                 <CardDescription>
                   {visibleBookings.length} {countLabel(visibleBookings.length)}
                 </CardDescription>
               </CardHeader>
-              <CardContent className="space-y-3">
+              <CardContent className="motion-stagger space-y-3">
                 {visibleBookings.length === 0 ? (
                   <div className="rounded-xl border border-dashed p-8 text-center text-sm text-muted-foreground">
                     Записей с таким статусом пока нет.
@@ -233,14 +233,14 @@ function SlotListCard({
   onDelete: (slot: AdminSlot) => Promise<void>;
 }) {
   return (
-    <Card>
+    <Card className="motion-enter motion-enter-delay-2">
       <CardHeader>
         <CardTitle>Созданные слоты</CardTitle>
         <CardDescription>
           Ближайшие слоты расписания. Слот с историей записей удалить нельзя.
         </CardDescription>
       </CardHeader>
-      <CardContent className="space-y-3">
+      <CardContent className="motion-stagger space-y-3">
         {slots.length === 0 ? (
           <div className="rounded-xl border border-dashed p-8 text-center text-sm text-muted-foreground">
             Будущих слотов пока нет.
@@ -253,7 +253,9 @@ function SlotListCard({
             return (
               <article
                 key={slot.id}
-                className="flex flex-col justify-between gap-4 rounded-xl border bg-background p-4 sm:flex-row sm:items-center"
+                className={`flex flex-col justify-between gap-4 rounded-xl border bg-background p-4 transition-[opacity,transform,box-shadow,border-color] duration-300 hover:-translate-y-0.5 hover:border-primary/35 hover:shadow-sm sm:flex-row sm:items-center ${
+                  pending ? "scale-[0.98] opacity-45" : ""
+                }`}
               >
                 <div className="min-w-0">
                   <div className="flex flex-wrap items-center gap-2">
@@ -311,7 +313,11 @@ function BookingRow({
   onStatusChange: (id: string, status: BookingStatus) => Promise<void>;
 }) {
   return (
-    <article className="rounded-xl border bg-background p-4">
+    <article
+      className={`rounded-xl border bg-background p-4 transition-[opacity,transform,box-shadow,border-color] duration-300 hover:-translate-y-0.5 hover:border-primary/35 hover:shadow-sm ${
+        pending ? "opacity-60" : ""
+      }`}
+    >
       <div className="flex flex-col justify-between gap-3 sm:flex-row">
         <div>
           <div className="flex flex-wrap items-center gap-2">
@@ -465,7 +471,7 @@ function CreateSlotCard({ onCreated }: { onCreated: () => void }) {
   }
 
   return (
-    <Card className="h-fit xl:sticky xl:top-6">
+    <Card className="motion-enter motion-enter-delay-2 h-fit xl:sticky xl:top-6">
       <CardHeader>
         <CalendarPlusIcon className="size-5 text-primary" />
         <CardTitle>Добавить занятия</CardTitle>
@@ -572,7 +578,11 @@ function StatusBadge({ status }: { status: BookingStatus }) {
       : status === "confirmed"
         ? "default"
         : "secondary";
-  return <Badge variant={variant}>{STATUS_LABELS[status]}</Badge>;
+  return (
+    <Badge className="motion-scale-in" variant={variant}>
+      {STATUS_LABELS[status]}
+    </Badge>
+  );
 }
 
 function formatAdminDate(isoDate: string) {

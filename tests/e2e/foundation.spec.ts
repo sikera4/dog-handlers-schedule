@@ -9,6 +9,19 @@ test("opens the Russian booking entry point", async ({ page }) => {
   await expect(page.getByText("Время показываем по Москве")).toBeVisible();
 });
 
+test("respects the reduced-motion preference", async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await page.goto("/");
+
+  await expect(page.locator(".motion-ambient").first()).toBeHidden();
+
+  const animationDuration = await page
+    .getByRole("heading", { name: "Запись на занятие с кинологом" })
+    .evaluate((element) => getComputedStyle(element).animationDuration);
+
+  expect(Number.parseFloat(animationDuration)).toBeLessThanOrEqual(0.001);
+});
+
 test("opens the admin and deletes an unbooked slot", async ({
   page,
 }, testInfo) => {

@@ -31,6 +31,8 @@
 
 :root {
   --radius: 0.875rem;
+  --motion-ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --motion-ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
   --background: oklch(0.985 0.006 92);
   --foreground: oklch(0.22 0.025 60);
   --card: oklch(1 0 0);
@@ -113,5 +115,211 @@
 
   button:not(:disabled) {
     cursor: pointer;
+  }
+}
+
+@keyframes motion-rise {
+  from {
+    opacity: 0;
+    transform: translateY(14px) scale(0.985);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes motion-slide-down {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes motion-step-in {
+  from {
+    opacity: 0;
+    transform: translateX(18px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes motion-pop {
+  0% {
+    opacity: 0;
+    transform: translateX(-50%) scale(0.55) rotate(-8deg);
+  }
+  70% {
+    opacity: 1;
+    transform: translateX(-50%) scale(1.08) rotate(2deg);
+  }
+  100% {
+    opacity: 1;
+    transform: translateX(-50%) scale(1) rotate(0);
+  }
+}
+
+@keyframes motion-paw {
+  0% {
+    opacity: 0;
+    transform: translateY(8px) scale(0.65) rotate(var(--paw-rotation));
+  }
+  55% {
+    opacity: 0.75;
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(-8px) scale(1) rotate(var(--paw-rotation));
+  }
+}
+
+@keyframes motion-scale-in {
+  from {
+    opacity: 0;
+    transform: scale(0.85);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes motion-ambient {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+  50% {
+    transform: translate3d(18px, -14px, 0) scale(1.08);
+  }
+}
+
+@keyframes motion-sheen {
+  from {
+    transform: translateX(-130%) skewX(-18deg);
+  }
+  to {
+    transform: translateX(230%) skewX(-18deg);
+  }
+}
+
+@layer utilities {
+  .motion-enter {
+    animation: motion-rise 520ms var(--motion-ease-out) backwards;
+  }
+
+  .motion-enter-delay-1 {
+    animation-delay: 80ms;
+  }
+
+  .motion-enter-delay-2 {
+    animation-delay: 150ms;
+  }
+
+  .motion-enter-delay-3 {
+    animation-delay: 230ms;
+  }
+
+  .motion-slide-down {
+    animation: motion-slide-down 460ms var(--motion-ease-out) backwards;
+  }
+
+  .motion-step-in {
+    animation: motion-step-in 360ms var(--motion-ease-out) backwards;
+  }
+
+  .motion-stagger > * {
+    animation: motion-rise 430ms var(--motion-ease-out) backwards;
+  }
+
+  .motion-stagger > :nth-child(2) {
+    animation-delay: 55ms;
+  }
+
+  .motion-stagger > :nth-child(3) {
+    animation-delay: 100ms;
+  }
+
+  .motion-stagger > :nth-child(4) {
+    animation-delay: 135ms;
+  }
+
+  .motion-stagger > :nth-child(5) {
+    animation-delay: 165ms;
+  }
+
+  .motion-stagger > :nth-child(n + 6) {
+    animation-delay: 190ms;
+  }
+
+  .motion-success-mark {
+    animation: motion-pop 650ms var(--motion-ease-spring) 100ms both;
+  }
+
+  .motion-scale-in {
+    animation: motion-scale-in 300ms var(--motion-ease-spring) backwards;
+  }
+
+  .motion-success-paw {
+    --paw-rotation: -18deg;
+    animation: motion-paw 900ms var(--motion-ease-out) 250ms both;
+  }
+
+  .motion-success-paw-end {
+    --paw-rotation: 20deg;
+    animation-delay: 420ms;
+  }
+
+  .motion-ambient {
+    animation: motion-ambient 11s ease-in-out infinite;
+    will-change: transform;
+  }
+
+  .motion-ambient-slow {
+    animation-duration: 15s;
+    animation-delay: -5s;
+  }
+
+  .motion-success-card::before {
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+    width: 34%;
+    content: "";
+    pointer-events: none;
+    background: linear-gradient(
+      90deg,
+      transparent,
+      color-mix(in oklch, var(--primary) 12%, transparent),
+      transparent
+    );
+    animation: motion-sheen 850ms var(--motion-ease-out) 250ms both;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    animation-delay: 0ms !important;
+    transition-duration: 0.01ms !important;
+  }
+
+  .motion-ambient {
+    display: none;
   }
 }
