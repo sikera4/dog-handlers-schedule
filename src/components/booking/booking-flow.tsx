@@ -6,6 +6,7 @@ import {
   CalendarDaysIcon,
   CheckCircle2Icon,
   Clock3Icon,
+  PawPrintIcon,
   RefreshCwIcon,
   UserRoundIcon,
   UsersIcon,
@@ -150,18 +151,28 @@ export function BookingFlow({
 
   if (confirmation) {
     return (
-      <Card className="mx-auto w-full max-w-2xl shadow-lg">
-        <CardHeader className="text-center">
-          <div className="mx-auto mb-2 grid size-14 place-items-center rounded-full bg-accent text-accent-foreground">
-            <CheckCircle2Icon className="size-7" aria-hidden="true" />
+      <Card className="motion-success-card relative mx-auto w-full max-w-2xl overflow-hidden shadow-lg">
+        <CardHeader className="relative z-10 text-center">
+          <div className="relative mx-auto mb-2 h-16 w-28" aria-hidden="true">
+            <span className="motion-success-paw absolute top-7 left-1 text-primary/50">
+              <PawPrintIcon className="size-5" />
+            </span>
+            <div className="motion-success-mark absolute top-0 left-1/2 grid size-14 -translate-x-1/2 place-items-center rounded-full bg-accent text-accent-foreground shadow-sm shadow-primary/15">
+              <CheckCircle2Icon className="size-7" />
+            </div>
+            <span className="motion-success-paw motion-success-paw-end absolute top-5 right-1 text-primary/45">
+              <PawPrintIcon className="size-4" />
+            </span>
           </div>
-          <CardTitle className="text-2xl">Заявка отправлена</CardTitle>
-          <CardDescription>
+          <CardTitle className="motion-enter motion-enter-delay-1 text-2xl">
+            Заявка отправлена
+          </CardTitle>
+          <CardDescription className="motion-enter motion-enter-delay-2">
             Кинолог проверит расписание и свяжется с вами для подтверждения.
           </CardDescription>
         </CardHeader>
-        <CardContent className="space-y-5">
-          <dl className="grid gap-3 rounded-xl bg-muted/60 p-4 text-sm sm:grid-cols-2">
+        <CardContent className="relative z-10 space-y-5">
+          <dl className="motion-stagger grid gap-3 rounded-xl bg-muted/60 p-4 text-sm sm:grid-cols-2">
             <SummaryItem
               label="Формат"
               value={sessionTypeLabel(confirmation.sessionType)}
@@ -176,7 +187,11 @@ export function BookingFlow({
               value={confirmation.id.slice(0, 8)}
             />
           </dl>
-          <Button asChild variant="outline" className="h-11 w-full">
+          <Button
+            asChild
+            variant="outline"
+            className="motion-enter motion-enter-delay-3 h-11 w-full"
+          >
             <a href={entryPoint === "telegram" ? "/telegram" : "/"}>
               Создать ещё одну запись
             </a>
@@ -200,15 +215,36 @@ export function BookingFlow({
             {currentStep === 3 && "Оставьте Telegram или телефон для связи."}
             {currentStep === 4 && "Проверьте данные перед отправкой."}
           </CardDescription>
+          <div
+            className="mt-2 h-1.5 overflow-hidden rounded-full bg-muted"
+            role="progressbar"
+            aria-label="Прогресс записи"
+            aria-valuemin={1}
+            aria-valuemax={steps.length}
+            aria-valuenow={Math.min(currentStep + 1, steps.length)}
+          >
+            <span
+              className="block h-full origin-left rounded-full bg-primary transition-transform duration-500 ease-out"
+              style={{
+                transform: `scaleX(${Math.min(currentStep + 1, steps.length) / steps.length})`,
+              }}
+            />
+          </div>
         </CardHeader>
         <CardContent>
-          {loading ? <LoadingState /> : null}
+          {loading ? (
+            <div className="motion-step-in">
+              <LoadingState />
+            </div>
+          ) : null}
           {loadError ? (
-            <ErrorState message={loadError} onRetry={loadAvailability} />
+            <div className="motion-step-in">
+              <ErrorState message={loadError} onRetry={loadAvailability} />
+            </div>
           ) : null}
 
           {!loading && !loadError && currentStep === 0 ? (
-            <div className="grid gap-3 sm:grid-cols-2">
+            <div className="motion-step-in motion-stagger grid gap-3 sm:grid-cols-2">
               <SessionButton
                 icon={UserRoundIcon}
                 title="Индивидуальное"
@@ -227,7 +263,7 @@ export function BookingFlow({
           ) : null}
 
           {!loading && !loadError && currentStep === 1 && sessionType ? (
-            <div className="space-y-5">
+            <div className="motion-step-in space-y-5">
               {typeSlots.length > 0 ? (
                 <div className="flex justify-center overflow-x-auto">
                   <Calendar
@@ -259,14 +295,14 @@ export function BookingFlow({
           ) : null}
 
           {currentStep === 2 && dayKey ? (
-            <div className="space-y-5">
+            <div className="motion-step-in space-y-5">
               <p className="font-medium capitalize">{formatDayKey(dayKey)}</p>
-              <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+              <div className="motion-stagger grid grid-cols-2 gap-3 sm:grid-cols-3">
                 {daySlots.map((slot) => (
                   <Button
                     key={slot.id}
                     variant="outline"
-                    className="h-auto min-h-14 flex-col gap-1 py-2"
+                    className="h-auto min-h-14 flex-col gap-1 py-2 hover:-translate-y-0.5 hover:border-primary/60 hover:shadow-sm active:scale-[0.98]"
                     onClick={() => setSelectedSlot(slot)}
                   >
                     <span>{formatTime(slot.startsAt)}</span>
@@ -286,7 +322,7 @@ export function BookingFlow({
           ) : null}
 
           {currentStep === 3 && selectedSlot ? (
-            <div className="space-y-5">
+            <div className="motion-step-in space-y-5">
               <BookingDetailsForm
                 initialValues={details}
                 onContinue={setDetails}
@@ -299,8 +335,8 @@ export function BookingFlow({
           ) : null}
 
           {currentStep === 4 && selectedSlot && details ? (
-            <div className="space-y-5">
-              <dl className="grid gap-3 rounded-xl bg-muted/60 p-4 text-sm sm:grid-cols-2">
+            <div className="motion-step-in space-y-5">
+              <dl className="motion-stagger grid gap-3 rounded-xl bg-muted/60 p-4 text-sm sm:grid-cols-2">
                 <SummaryItem
                   label="Формат"
                   value={sessionTypeLabel(selectedSlot.sessionType)}
@@ -354,14 +390,26 @@ export function BookingFlow({
           {steps.map((step, index) => (
             <li
               key={step}
-              className={
+              className={`flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-[color,background-color,transform] duration-300 ${
                 index === currentStep
-                  ? "flex items-center gap-3 rounded-lg bg-accent px-3 py-2 text-sm font-medium text-accent-foreground"
-                  : "flex items-center gap-3 rounded-lg px-3 py-2 text-sm text-muted-foreground"
-              }
+                  ? "translate-x-1 bg-accent font-medium text-accent-foreground"
+                  : index < currentStep
+                    ? "text-foreground"
+                    : "text-muted-foreground"
+              }`}
             >
-              <span className="grid size-6 place-items-center rounded-full border text-xs">
-                {index + 1}
+              <span
+                className={`grid size-6 place-items-center rounded-full border text-xs transition-[color,background-color,border-color,transform] duration-300 ${
+                  index <= currentStep
+                    ? "scale-105 border-primary bg-primary text-primary-foreground"
+                    : ""
+                }`}
+              >
+                {index < currentStep ? (
+                  <CheckCircle2Icon className="size-3.5" aria-hidden="true" />
+                ) : (
+                  index + 1
+                )}
               </span>
               {step}
             </li>
@@ -395,11 +443,14 @@ function SessionButton({
   return (
     <button
       type="button"
-      className="group flex min-h-40 flex-col items-start rounded-xl border bg-background p-5 text-left transition hover:border-primary hover:shadow-md focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
+      className="group flex min-h-40 flex-col items-start rounded-xl border bg-background p-5 text-left transition-[transform,border-color,box-shadow] duration-300 hover:-translate-y-1 hover:border-primary hover:shadow-lg hover:shadow-primary/10 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring active:translate-y-0 active:scale-[0.985]"
       onClick={onClick}
     >
-      <span className="mb-5 grid size-11 place-items-center rounded-xl bg-secondary text-secondary-foreground group-hover:bg-accent">
-        <Icon className="size-5" aria-hidden="true" />
+      <span className="mb-5 grid size-11 place-items-center rounded-xl bg-secondary text-secondary-foreground transition-colors duration-300 group-hover:bg-accent">
+        <Icon
+          className="size-5 transition-transform duration-300 group-hover:scale-110 group-hover:-rotate-3"
+          aria-hidden="true"
+        />
       </span>
       <span className="font-semibold">{title}</span>
       <span className="mt-1 text-sm text-muted-foreground">{note}</span>
