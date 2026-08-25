@@ -37,7 +37,24 @@ export default async function AdminPage({
     repository.listBookings(),
     repository.listSlots(),
   ]);
+
+  const activeBookingCountBySlot = new Map<string, number>();
+  for (const booking of bookings) {
+    if (booking.status === "cancelled") continue;
+    activeBookingCountBySlot.set(
+      booking.slotId,
+      (activeBookingCountBySlot.get(booking.slotId) ?? 0) + 1,
+    );
+  }
+
   return (
-    <AdminShell bookings={bookings} slots={slots} identity={session.identity} />
+    <AdminShell
+      bookings={bookings}
+      slots={slots.map((slot) => ({
+        ...slot,
+        activeBookingCount: activeBookingCountBySlot.get(slot.id) ?? 0,
+      }))}
+      identity={session.identity}
+    />
   );
 }

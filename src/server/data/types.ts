@@ -99,7 +99,7 @@ export class RepositoryError extends Error {
       | "SLOT_NOT_OPEN"
       | "SLOT_IN_PAST"
       | "SLOT_FULL"
-      | "SLOT_HAS_BOOKINGS"
+      | "SLOT_HAS_ACTIVE_BOOKINGS"
       | "CONFLICT"
       | "NOT_CONFIGURED"
       | "UNKNOWN",

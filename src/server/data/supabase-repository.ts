@@ -210,20 +210,10 @@ export class SupabaseAdminRepository implements AdminRepository {
   }
 
   async deleteSlot(slotId: string): Promise<void> {
-    const { data, error } = await this.client
-      .from("session_slots")
-      .delete()
-      .eq("id", slotId)
-      .select("id")
-      .maybeSingle();
-
-    if (error) {
-      if (error.code === "23503") {
-        throw new RepositoryError("SLOT_HAS_BOOKINGS", error.message);
-      }
-      throw mapSupabaseError(error.message);
-    }
-    if (!data) throw new RepositoryError("SLOT_NOT_FOUND");
+    const { error } = await this.client.rpc("delete_session_slot", {
+      p_slot_id: slotId,
+    });
+    if (error) throw mapSupabaseError(error.message);
   }
 }
 
@@ -233,6 +223,7 @@ function mapSupabaseError(message: string) {
     "SLOT_NOT_OPEN",
     "SLOT_IN_PAST",
     "SLOT_FULL",
+    "SLOT_HAS_ACTIVE_BOOKINGS",
   ] as const;
   const code = knownCodes.find((candidate) => message.includes(candidate));
   if (code) return new RepositoryError(code, message);

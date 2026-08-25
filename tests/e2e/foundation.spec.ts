@@ -51,6 +51,62 @@ test("opens the admin and deletes an unbooked slot", async ({
   );
 });
 
+test("deletes a slot after its only booking is cancelled", async ({
+  page,
+  request,
+}, testInfo) => {
+  const from = new Date();
+  const to = new Date(from.getTime() + 45 * 24 * 60 * 60 * 1000);
+  const availability = await request.get("/api/availability", {
+    params: {
+      from: from.toISOString(),
+      to: to.toISOString(),
+      sessionType: "individual",
+    },
+  });
+  expect(availability.ok()).toBe(true);
+  const body = (await availability.json()) as {
+    slots: Array<{ id: string }>;
+  };
+  const slot = body.slots[testInfo.project.name === "chromium" ? 4 : 5];
+  expect(slot).toBeDefined();
+
+  const dogName = `Отмена E2E ${testInfo.project.name}`;
+  const created = await request.post("/api/bookings", {
+    data: {
+      slotId: slot.id,
+      telegramUsername: `cancel_${testInfo.project.name.replaceAll("-", "_")}`,
+      phone: "",
+      clientName: "Тест",
+      dogName,
+    },
+  });
+  expect(created.status()).toBe(201);
+
+  await page.goto("/admin");
+  await page.getByLabel("Пароль").fill("playwright-local-password");
+  await page.getByRole("button", { name: "Войти" }).click();
+
+  const deleteButton = page.getByTestId(`delete-slot-${slot.id}`);
+  await expect(deleteButton).toBeDisabled();
+
+  const bookingRow = page.locator("article").filter({ hasText: dogName });
+  await bookingRow.getByRole("button", { name: "Отменить" }).click();
+  await expect(page.getByText("Статус обновлён")).toBeVisible();
+  await expect(deleteButton).toBeEnabled();
+
+  let confirmationMessage = "";
+  page.once("dialog", async (dialog) => {
+    confirmationMessage = dialog.message();
+    await dialog.accept();
+  });
+  await deleteButton.click();
+  expect(confirmationMessage).toContain("Отменённые записи (1)");
+
+  await expect(page.getByText("Слот удалён")).toBeVisible();
+  await expect(deleteButton).toHaveCount(0);
+});
+
 test("books the last individual place atomically", async ({
   request,
 }, testInfo) => {

@@ -106,7 +106,7 @@ describe("development booking repository", () => {
     );
   });
 
-  it("does not delete a slot with booking history", async () => {
+  it("deletes a slot when all of its bookings are cancelled", async () => {
     const repository = await createRepository();
     const [slot] = await repository.listAvailability({
       from: new Date().toISOString(),
@@ -119,13 +119,43 @@ describe("development booking repository", () => {
     });
     await repository.updateBookingStatus(booking.id, "cancelled");
 
+    await expect(repository.listSlots()).resolves.toContainEqual(
+      expect.objectContaining({
+        id: slot.id,
+        bookingCount: 1,
+      }),
+    );
+    await expect(repository.deleteSlot(slot.id)).resolves.toBeUndefined();
+    await expect(repository.listSlots()).resolves.not.toContainEqual(
+      expect.objectContaining({ id: slot.id }),
+    );
+    await expect(repository.listBookings()).resolves.not.toContainEqual(
+      expect.objectContaining({ id: booking.id }),
+    );
+  });
+
+  it("does not delete a slot with an active booking", async () => {
+    const repository = await createRepository();
+    const [slot] = await repository.listAvailability({
+      from: new Date().toISOString(),
+      to: new Date(Date.now() + 45 * 24 * 60 * 60 * 1000).toISOString(),
+    });
+    await repository.createBooking({
+      slotId: slot.id,
+      phone: "+79991234567",
+      dogName: "Рекс",
+    });
+
     await expect(repository.deleteSlot(slot.id)).rejects.toEqual(
       expect.objectContaining<Partial<RepositoryError>>({
-        code: "SLOT_HAS_BOOKINGS",
+        code: "SLOT_HAS_ACTIVE_BOOKINGS",
       }),
     );
     await expect(repository.listSlots()).resolves.toContainEqual(
-      expect.objectContaining({ id: slot.id, bookingCount: 1 }),
+      expect.objectContaining({
+        id: slot.id,
+        bookingCount: 1,
+      }),
     );
   });
 });

@@ -32,9 +32,9 @@ export async function DELETE(
       if (error.code === "SLOT_NOT_FOUND") {
         return Response.json({ message: "Слот не найден" }, { status: 404 });
       }
-      if (error.code === "SLOT_HAS_BOOKINGS") {
+      if (error.code === "SLOT_HAS_ACTIVE_BOOKINGS") {
         return Response.json(
-          { message: "Нельзя удалить слот, на который уже есть записи" },
+          { message: "Нельзя удалить слот, пока есть активные записи" },
           { status: 409 },
         );
       }

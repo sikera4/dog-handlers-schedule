@@ -49,13 +49,15 @@ const SLOT_STATUS_LABELS: Record<SlotStatus, string> = {
   cancelled: "Отменён",
 };
 
+type AdminSlotView = AdminSlot & { activeBookingCount: number };
+
 export function AdminShell({
   bookings,
   slots,
   identity,
 }: {
   bookings: AdminBooking[];
-  slots: AdminSlot[];
+  slots: AdminSlotView[];
   identity: string;
 }) {
   const router = useRouter();
@@ -96,9 +98,14 @@ export function AdminShell({
     window.location.reload();
   }
 
-  async function deleteSlot(slot: AdminSlot) {
+  async function deleteSlot(slot: AdminSlotView) {
+    const cancelledBookingCount = slot.bookingCount - slot.activeBookingCount;
     const confirmed = window.confirm(
-      `Удалить слот ${formatAdminSlotDate(slot.startsAt, slot.endsAt)}?\n\nЭто действие нельзя отменить.`,
+      `Удалить слот ${formatAdminSlotDate(slot.startsAt, slot.endsAt)}?${
+        cancelledBookingCount > 0
+          ? `\n\nОтменённые записи (${cancelledBookingCount}) и их история также будут удалены.`
+          : ""
+      }\n\nЭто действие нельзя отменить.`,
     );
     if (!confirmed) return;
 
@@ -228,16 +235,16 @@ function SlotListCard({
   pendingSlotId,
   onDelete,
 }: {
-  slots: AdminSlot[];
+  slots: AdminSlotView[];
   pendingSlotId?: string;
-  onDelete: (slot: AdminSlot) => Promise<void>;
+  onDelete: (slot: AdminSlotView) => Promise<void>;
 }) {
   return (
     <Card className="motion-enter motion-enter-delay-2">
       <CardHeader>
         <CardTitle>Созданные слоты</CardTitle>
         <CardDescription>
-          Ближайшие слоты расписания. Слот с историей записей удалить нельзя.
+          Удалить можно пустой слот или слот только с отменёнными записями.
         </CardDescription>
       </CardHeader>
       <CardContent className="motion-stagger space-y-3">
@@ -248,6 +255,9 @@ function SlotListCard({
         ) : (
           slots.map((slot) => {
             const hasBookings = slot.bookingCount > 0;
+            const hasActiveBookings = slot.activeBookingCount > 0;
+            const cancelledBookingCount =
+              slot.bookingCount - slot.activeBookingCount;
             const pending = pendingSlotId === slot.id;
 
             return (
@@ -265,9 +275,14 @@ function SlotListCard({
                     <Badge variant="secondary">
                       {SLOT_STATUS_LABELS[slot.status]}
                     </Badge>
-                    {hasBookings ? (
+                    {hasActiveBookings ? (
                       <Badge variant="outline">
-                        Записей: {slot.bookingCount}
+                        Активных: {slot.activeBookingCount}
+                      </Badge>
+                    ) : null}
+                    {cancelledBookingCount > 0 ? (
+                      <Badge variant="outline">
+                        Отменённых: {cancelledBookingCount}
                       </Badge>
                     ) : null}
                   </div>
@@ -277,17 +292,22 @@ function SlotListCard({
                       : `Групповое · мест: ${slot.capacity}`}
                     {slot.location ? ` · ${slot.location}` : ""}
                   </p>
-                  {hasBookings ? (
+                  {hasActiveBookings ? (
                     <p className="mt-2 text-xs text-muted-foreground">
-                      Для этого слота уже есть история записей, поэтому удалить
-                      его нельзя.
+                      Удаление недоступно, пока у слота есть активные записи.
+                    </p>
+                  ) : hasBookings ? (
+                    <p className="mt-2 text-xs text-muted-foreground">
+                      При удалении слота отменённые записи также исчезнут из
+                      истории.
                     </p>
                   ) : null}
                 </div>
                 <Button
                   size="sm"
                   variant="destructive"
-                  disabled={pending || hasBookings}
+                  data-testid={`delete-slot-${slot.id}`}
+                  disabled={pending || hasActiveBookings}
                   aria-label={`Удалить слот ${formatAdminSlotDate(slot.startsAt, slot.endsAt)}`}
                   onClick={() => onDelete(slot)}
                 >

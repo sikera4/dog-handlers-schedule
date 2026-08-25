@@ -294,10 +294,22 @@ export class DevelopmentRepository
       const slotIndex = data.slots.findIndex((slot) => slot.id === slotId);
       if (slotIndex === -1) throw new RepositoryError("SLOT_NOT_FOUND");
 
-      if (data.bookings.some((booking) => booking.slotId === slotId)) {
-        throw new RepositoryError("SLOT_HAS_BOOKINGS");
+      const slotBookings = data.bookings.filter(
+        (booking) => booking.slotId === slotId,
+      );
+      if (slotBookings.some((booking) => booking.status !== "cancelled")) {
+        throw new RepositoryError("SLOT_HAS_ACTIVE_BOOKINGS");
       }
 
+      const deletedBookingIds = new Set(
+        slotBookings.map((booking) => booking.id),
+      );
+      data.bookings = data.bookings.filter(
+        (booking) => booking.slotId !== slotId,
+      );
+      data.events = data.events.filter(
+        (event) => !deletedBookingIds.has(event.bookingId),
+      );
       data.slots.splice(slotIndex, 1);
       await this.writeData(data);
     });
